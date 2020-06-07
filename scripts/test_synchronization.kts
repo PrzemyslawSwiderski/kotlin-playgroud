@@ -5,12 +5,16 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.system.measureTimeMillis
 
-suspend fun runMassive(action: suspend () -> Unit) = coroutineScope {
-    for (i in 1..1_000_000) {
+val launchCount = 1_000_000
+
+suspend fun massiveLaunch(action: suspend () -> Unit) = coroutineScope {
+    for (i in 1..launchCount) {
+        if (i == launchCount) log("Launching: $launchCount. coroutine")
         launch { action() }
     }
 }
 
+fun log(msg: String) = println("[${Thread.currentThread().name}] $msg")
 
 // Test mutable counter inc with single thread
 @ObsoleteCoroutinesApi
@@ -22,12 +26,12 @@ runBlocking {
 
     val time = measureTimeMillis {
         withContext(counterContext) {
-            runMassive {
+            massiveLaunch {
                 counterSingleThreadContext++
             }
         }
     }
-    println("Counter in single threaded context = $counterSingleThreadContext, time: $time ms") // 1000 - there is no problem with multi-threaded access
+    log("Counter in single threaded context = $counterSingleThreadContext, time: $time ms") // 1000 - there is no problem with multi-threaded access
 }
 
 // Test with synchronization on a counter
@@ -37,14 +41,14 @@ var counterSynchronized = 0
 runBlocking {
     val time = measureTimeMillis {
         withContext(Dispatchers.Default) {
-            runMassive {
+            massiveLaunch {
                 synchronized(counterSynchronized) {
                     counterSynchronized++
                 }
             }
         }
     }
-    println("Counter with synchronization on a mutable object = $counterSynchronized, time: $time ms")
+    log("Counter with synchronization on a mutable object = $counterSynchronized, time: $time ms")
 }
 
 
@@ -61,12 +65,12 @@ fun incSync(obj: Any) = synchronized(obj) {
 runBlocking {
     val time = measureTimeMillis {
         withContext(Dispatchers.Default) {
-            runMassive {
+            massiveLaunch {
                 incSync(obj)
             }
         }
     }
-    println("Counter with sync on a external obj = $counterSyncByExternalObj, time: $time ms")
+    log("Counter with sync on a external obj = $counterSyncByExternalObj, time: $time ms")
 }
 
 // Test with Mutex instance
@@ -77,12 +81,12 @@ var counterWithMutex = 0
 runBlocking {
     val time = measureTimeMillis {
         withContext(Dispatchers.Default) {
-            runMassive {
+            massiveLaunch {
                 mutex.withLock {
                     counterWithMutex++
                 }
             }
         }
     }
-    println("Counter with mutex = $counterWithMutex, time: $time ms")
+    log("Counter with mutex = $counterWithMutex, time: $time ms")
 }

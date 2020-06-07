@@ -20,7 +20,3 @@ sourceSets {
         java.srcDir("scripts")
     }
 }
-
-//val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-
-//compileKotlin.kotlinOptions.freeCompilerArgs = listOf("-script", "$rootDir/scripts/coroutines.kts")
